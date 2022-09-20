@@ -2,11 +2,10 @@
 #include <String.h>
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
-#include "DHT.h"
+#include "DHTesp.h"
 
-#define DHTPIN 5    // what digital pin we're connected to
-#define DHTTYPE DHT11   // DHT 11
-
+#define DHTPIN 5
+DHTesp dht;
 ////////////////////////////////////////
 
 #define WLAN_SSID       "XXXXXXXXXXXX"      //mention SSID 
@@ -29,13 +28,11 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, IO_USERNAME, IO_K
 Adafruit_MQTT_Publish TEMP = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME "/feeds/TEMP");
 Adafruit_MQTT_Publish HUM = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME "/feeds/HUM");
 void MQTT_connect();
-DHT dht(DHTPIN, DHTTYPE);
 //////////////////////////////////////////
 void setup()
 {
 
   Serial.begin(9600);
-  dht.begin();
   Serial.println(F("Adafruit MQTT demo"));
   // Connect to WiFi access point.
   Serial.println(); Serial.println();
@@ -50,30 +47,30 @@ void setup()
   Serial.println("WiFi connected");
   Serial.println("IP address: "); 
   Serial.println(WiFi.localIP());
+   dht.setup(DHTPIN, DHTesp::DHT11); 
+  
 }
 
 void loop()
 {
   MQTT_connect();
+   delay(dht.getMinimumSamplingPeriod());
    // Read temperature as Celsius (the default)
-  float h = dht.readHumidity();
+  float h = dht.getHumidity();
   // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
-  else
-  {
+  float t = dht.getTemperature();
   Serial.println("Sending DATA");
-  Serial.println("Temperature:");
-  Serial.println(t);
-  Serial.println("Humidity:");
+  Serial.print(dht.getStatusString());
+  Serial.print("\t");
+  Serial.print("Temperature: ");
+  Serial.print( t);
+  Serial.print("\t");
+  Serial.print("Humidity: ");
   Serial.println(h);
   TEMP.publish(t);
   HUM.publish(h);
-  }
-  delay(4000);
+  
+  delay(5000);
 
 }
 
